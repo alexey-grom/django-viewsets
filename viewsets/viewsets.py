@@ -7,20 +7,24 @@ from . import helpers
 
 
 class BaseViewSet(object):
+    namespace = None
+
     def collect_urls(self, *other):
         return other
 
     def wrap_view(self, view_class):
-        kwargs = {'viewset': self}
+        kwargs = {'viewset': self}  # weakref.ref?
         view_class = helpers.make_mixin(view_class,
-                                        views.GenericViewMixin,
-                                        viewset=self)
+                                        views.GenericViewMixin)
         return kwargs, view_class
+
+    def get_namespace(self):
+        return self.namespace
 
     def get_urls(self):
         urls = self.collect_urls()
         nested = patterns('', *urls)
-        return [url(r'^', include(nested))]
+        return include(nested, namespace=self.get_namespace())
 
     @property
     def urls(self):
