@@ -1,16 +1,27 @@
 # encoding: utf-8
 
-from django.conf.urls import patterns, include, url
+from django.conf.urls import url
 from django.views import generic as generic_views
 
 from . import viewsets
 from . import helpers
 
 
+class ModelNamespaceMixin(viewsets.BaseViewSet):
+    model = None
+
+    def get_namespace(self):
+        namespace = super(ModelNamespaceMixin, self).get_namespace()
+        if namespace is None and self.model:
+            namespace = helpers.camelcase_to_dash(self.model.__name__)
+        return namespace
+
+
 class ListMixin(viewsets.BaseViewSet):
     model = None
     queryset = None
     list_template_name = None
+    paginate_by = None
 
     def collect_urls(self, *other):
         kwargs, view_class = self.build_list_view()
@@ -25,6 +36,7 @@ class ListMixin(viewsets.BaseViewSet):
             'template_name': self.list_template_name,
             'model': self.model,
             'queryset': self.queryset,
+            'paginate_by': self.paginate_by,
         })
         return kwargs, view_class
 
@@ -135,10 +147,3 @@ class DeleteMixin(viewsets.BaseViewSet):
             'success_url': self.delete_success_url,
         })
         return kwargs, view_class
-
-
-class LoginRequiredMixin(viewsets.BaseViewSet):
-    def wrap_view(self, view_class):
-        from braces.views import LoginRequiredMixin as LoginRequiredViewMixin
-        kwargs, view_class = super(LoginRequiredMixin, self).wrap_view(view_class)
-        return kwargs, helpers.make_mixin(view_class, LoginRequiredViewMixin)

@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-from django.conf.urls import patterns, include, url
+from django.conf.urls import patterns, include
 
 from . import views
 from . import helpers
@@ -8,6 +8,13 @@ from . import helpers
 
 class BaseViewSet(object):
     namespace = None
+    mixin_classes = (views.GenericViewMixin, )
+
+    def get_namespace(self):
+        return self.namespace
+
+    def get_mixin_classes(self):
+        return self.mixin_classes
 
     def collect_urls(self, *other):
         return other
@@ -15,11 +22,8 @@ class BaseViewSet(object):
     def wrap_view(self, view_class):
         kwargs = {'viewset': self}  # weakref.ref?
         view_class = helpers.make_mixin(view_class,
-                                        views.GenericViewMixin)
+                                        *self.get_mixin_classes())
         return kwargs, view_class
-
-    def get_namespace(self):
-        return self.namespace
 
     def get_urls(self):
         urls = self.collect_urls()
