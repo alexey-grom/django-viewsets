@@ -8,10 +8,8 @@ from viewsets import helpers
 
 
 class BaseViewSet(object):
-    mixin_classes = (views.GenericViewMixin, )
-
     def get_mixin_classes(self):
-        return self.mixin_classes
+        return (views.GenericViewMixin, )
 
     def collect_urls(self, *other):
         return other

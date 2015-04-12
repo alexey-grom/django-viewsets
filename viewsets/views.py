@@ -2,9 +2,13 @@
 
 from django.views.generic import base as base_views
 from django.views import generic as generic_views
+from django.utils.translation import ugettext_lazy as _
+
+from viewsets import compat
+from viewsets import helpers
 
 
-class GenericViewMixin(base_views.ContextMixin):
+class GenericViewMixin(base_views.ContextMixin, generic_views.View):
     viewset = None
 
     def get_context_data(self, **kwargs):
@@ -12,57 +16,63 @@ class GenericViewMixin(base_views.ContextMixin):
         return super(GenericViewMixin, self).get_context_data(**kwargs)
 
 
-class TemplateMixin(base_views.TemplateResponseMixin, base_views.ContextMixin):
-    model = None
-    generic_name = None
+class GuardViewMixin(GenericViewMixin):
+    def dispatch(self, request, *args, **kwargs):
+        response = self.viewset.pre_dispatch_request(self, request)
+        if response:
+            return response
+        return super(GuardViewMixin, self).dispatch(request, *args, **kwargs)
 
+
+class ListView(generic_views.ListView, base_views.TemplateResponseMixin,
+               GenericViewMixin):
     def get_template_names(self):
-        result = super(TemplateMixin, self).get_template_names()
-
-        if self.generic_name:
-            result = ['viewsets/{}.html'.format(self.generic_name)] + result
-
-        if self.model and self.generic_name:
-            opts = self.model._meta
-            args = dict(app=opts.app_label,
-                        model=opts.model_name,
-                        generic_name=self.generic_name)
-            result = ['{app}/{model}/{generic_name}.html'.format(**args),
-                      '{app}/{generic_name}.html'.format(**args),
-                      '{generic_name}.html'.format(**args), ] + result
-
-        return result
-
-    def get_context_data(self, **kwargs):
-        if self.model:
-            kwargs['model_meta'] = self.model._meta
-        return super(TemplateMixin, self).get_context_data(**kwargs)
+        return helpers.generic_template_names(self.viewset, 'list')
 
 
-class ListView(TemplateMixin, GenericViewMixin, generic_views.ListView):
-    generic_name = 'list'
+class DetailView(generic_views.DetailView, base_views.TemplateResponseMixin,
+                 GenericViewMixin):
+    def get_template_names(self):
+        return helpers.generic_template_names(self.viewset, 'detail')
 
 
-class DetailView(TemplateMixin, GenericViewMixin, generic_views.DetailView):
-    generic_name = 'detail'
-
-
-class CreateView(TemplateMixin, GenericViewMixin, generic_views.CreateView):
-    generic_name = 'create'
+class CreateView(compat.MessagesMixin,
+                 generic_views.CreateView, base_views.TemplateResponseMixin,
+                 GenericViewMixin):
+    def get_template_names(self):
+        return helpers.generic_template_names(self.viewset, 'create')
 
     def get_success_url(self):
         return self.viewset.reverse('detail', self.object.pk)
 
+    def form_valid(self, form):
+        if self.messages:
+            self.messages.success(_('Created successful'))
+        return super(CreateView, self).form_valid(form)
 
-class UpdateView(TemplateMixin, GenericViewMixin, generic_views.UpdateView):
-    generic_name = 'update'
+
+class UpdateView(compat.MessagesMixin,
+                 generic_views.UpdateView, base_views.TemplateResponseMixin,
+                 GenericViewMixin):
+    def get_template_names(self):
+        return helpers.generic_template_names(self.viewset, 'update')
 
     def get_success_url(self):
         return self.viewset.reverse('detail', self.object.pk)
 
+    def form_valid(self, form):
+        if self.messages:
+            self.messages.success(_('Updated successful'))
+        return super(UpdateView, self).form_valid(form)
 
-class DeleteView(TemplateMixin, GenericViewMixin, generic_views.DeleteView):
-    generic_name = 'delete'
+
+class DeleteView(compat.MessagesMixin,
+                 generic_views.DeleteView, base_views.TemplateResponseMixin,
+                 GenericViewMixin):
+    def get_template_names(self):
+        return helpers.generic_template_names(self.viewset, 'delete')
 
     def get_success_url(self):
+        if self.messages:
+            self.messages.success(_('Deleted successful'))
         return self.viewset.reverse('list')

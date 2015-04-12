@@ -7,7 +7,7 @@
 
 {% block breadcrumbs %}
     {% if viewset|viewset_has:'list' %}
-        <li><a href="{% viewset_reverse 'list' %}">{{ model_meta.verbose_name_plural|capfirst }}</a></li>
+        <li><a href="{% viewset_reverse 'list' %}">{{ viewset.model_options.verbose_name_plural|capfirst }}</a></li>
     {% endif %}
     {% if viewset|viewset_has:'detail' %}
         <li><a href="{% viewset_reverse 'detail' pk=object.pk %}">{{ object }}</a></li>

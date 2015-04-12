@@ -3,17 +3,17 @@
 {% load i18n %}
 {% load viewsets_tags %}
 
-{% block title %}{{ model_meta.verbose_name_plural|capfirst }} {% trans 'list' %}{% endblock %}
+{% block title %}{{ viewset.model_options.verbose_name_plural|capfirst }} {% trans 'list' %}{% endblock %}
 
 {% block breadcrumbs %}
-    <li class="active">{{ model_meta.verbose_name_plural|capfirst }}</li>
+    <li class="active">{{ viewset.model_options.verbose_name_plural|capfirst }}</li>
 {% endblock %}
 
 {% block content %}
     <div class="row">
         <div class="col-md-12">
             <h3>
-                <span>{{ model_meta.verbose_name_plural|capfirst }} {% trans 'list' %}</span>
+                <span>{{ viewset.model_options.verbose_name_plural|capfirst }} {% trans 'list' %}</span>
                 {% if viewset|viewset_has:'add' %}
                     <a class="btn btn-default btn-sm pull-right" href="{% viewset_reverse 'add' %}"><i class="fa fa-plus"></i>&nbsp;{% trans 'Add' %}</a>
                 {% endif %}

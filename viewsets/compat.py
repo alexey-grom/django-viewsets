@@ -13,6 +13,13 @@ except ImportError:
     django_filters = None
 
 try:
-    import braces
+    import braces.views as braces
 except ImportError:
-    django_filters = None
+    braces = None
+
+
+if braces:
+    MessagesMixin = braces.MessageMixin
+else:
+    class MessagesMixin(object):
+        messages = None

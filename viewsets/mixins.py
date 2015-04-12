@@ -35,6 +35,15 @@ class ModelNamespaceMixin(NamespaceMixin):
         return self._namespace
 
 
+class GuardMixin(viewset.BaseViewSet):
+    def pre_dispatch_request(self, view, request):
+        """"""
+
+    def get_mixin_classes(self):
+        return (views.GuardViewMixin, ) + \
+               super(GuardMixin, self).get_mixin_classes()
+
+
 class ListMixin(viewset.BaseViewSet):
     model = None
     queryset = None
