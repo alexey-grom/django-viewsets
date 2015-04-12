@@ -11,3 +11,8 @@ try:
     import django_filters
 except ImportError:
     django_filters = None
+
+try:
+    import braces
+except ImportError:
+    django_filters = None

@@ -15,7 +15,7 @@
             <h3>
                 <span>{{ model_meta.verbose_name_plural|capfirst }} {% trans 'list' %}</span>
                 {% if viewset|viewset_has:'add' %}
-                    <a class="btn btn-default btn-sm pull-right" href="{% viewset_reverse 'add' %}"><i class="glyphicon glyphicon-plus"></i> {% trans 'Add' %}</a>
+                    <a class="btn btn-default btn-sm pull-right" href="{% viewset_reverse 'add' %}"><i class="fa fa-plus"></i>&nbsp;{% trans 'Add' %}</a>
                 {% endif %}
             </h3>
         </div>
@@ -27,10 +27,10 @@
                     <li class="list-group-item">
                         <div class="btn-group pull-right" role="group">
                             {% if viewset|viewset_has:'edit' %}
-                                <a class="btn btn-default btn-xs" href="{% viewset_reverse 'edit' pk=object.pk %}"><i class="glyphicon glyphicon-pencil"></i> {% trans 'Edit' %}</a>
+                                <a class="btn btn-default btn-xs" href="{% viewset_reverse 'edit' pk=object.pk %}"><i class="fa fa-pencil"></i>&nbsp;{% trans 'Edit' %}</a>
                             {% endif %}
                             {% if viewset|viewset_has:'delete' %}
-                                <a class="btn btn-default btn-xs" href="{% viewset_reverse 'delete' pk=object.pk %}"><i class="glyphicon glyphicon-trash"></i> {% trans 'Delete' %}</a>
+                                <a class="btn btn-default btn-xs" href="{% viewset_reverse 'delete' pk=object.pk %}"><i class="fa fa-trash"></i>&nbsp;{% trans 'Delete' %}</a>
                             {% endif %}
                         </div>
                         {% if viewset|viewset_has:'detail' %}
@@ -41,4 +41,25 @@
             </ul>
         </div>
     </div>
+    {% if is_paginated %}
+        <div class="row">
+            <div class="col-md-12">
+                <ul class="pagination pagination-centered">
+                    {% if page_obj.has_previous %}
+                        <li><a href="?page=1"><i class="fa fa-angle-double-left"></i></a></li>
+                        <li><a href="?page={{ page_obj.previous_page_number }}"><i class="fa fa-angle-left"></i></a></li>
+                    {% endif %}
+
+                    {% for i in paginator.page_range %}
+                        <li {% if page_obj.number == i %} class="active" {% endif %}><a href="?page={{ i }}">{{ i }}</a></li>
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li><a href="?page={{ page_obj.next_page_number }}"><i class="fa fa-angle-right"></i></a></li>
+                        <li><a href="?page={{ page_obj.paginator.num_pages }}"><i class="fa fa-angle-double-right"></i></a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}

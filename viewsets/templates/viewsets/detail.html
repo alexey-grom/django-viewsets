@@ -16,10 +16,10 @@
     <h2>
         <span class="btn-group pull-right" role="group">
             {% if viewset|viewset_has:'edit' %}
-                <a class="btn btn-default btn-sm" href="{% viewset_reverse 'edit' pk=object.pk %}"><i class="glyphicon glyphicon-pencil"></i> {% trans 'Edit' %}</a>
+                <a class="btn btn-default btn-sm" href="{% viewset_reverse 'edit' pk=object.pk %}"><i class="fa fa-pencil"></i>&nbsp;{% trans 'Edit' %}</a>
             {% endif %}
             {% if viewset|viewset_has:'delete' %}
-                <a class="btn btn-default btn-sm" href="{% viewset_reverse 'delete' pk=object.pk %}"><i class="glyphicon glyphicon-trash"></i> {% trans 'Delete' %}</a>
+                <a class="btn btn-default btn-sm" href="{% viewset_reverse 'delete' pk=object.pk %}"><i class="fa fa-trash"></i>&nbsp;{% trans 'Delete' %}</a>
             {% endif %}
         </span>
         <span>&laquo;{{ object }}&raquo;</span>

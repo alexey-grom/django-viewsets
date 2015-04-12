@@ -38,7 +38,7 @@ class ModelNamespaceMixin(NamespaceMixin):
 class ListMixin(viewset.BaseViewSet):
     model = None
     queryset = None
-    paginate_by = None
+    paginate_by = 100
 
     def collect_urls(self, *other):
         kwargs, view_class = self.build_list_view()
