@@ -43,12 +43,9 @@ class CreateView(compat.MessagesMixin,
         return helpers.generic_template_names(self.viewset, 'create')
 
     def get_success_url(self):
-        return self.viewset.reverse('detail', self.object.pk)
-
-    def form_valid(self, form):
         if self.messages:
             self.messages.success(_('Created successful'))
-        return super(CreateView, self).form_valid(form)
+        return self.viewset.reverse('detail', self.object.pk)
 
 
 class UpdateView(compat.MessagesMixin,
@@ -58,12 +55,9 @@ class UpdateView(compat.MessagesMixin,
         return helpers.generic_template_names(self.viewset, 'update')
 
     def get_success_url(self):
-        return self.viewset.reverse('detail', self.object.pk)
-
-    def form_valid(self, form):
         if self.messages:
             self.messages.success(_('Updated successful'))
-        return super(UpdateView, self).form_valid(form)
+        return self.viewset.reverse('detail', self.object.pk)
 
 
 class DeleteView(compat.MessagesMixin,
