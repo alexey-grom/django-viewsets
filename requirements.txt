@@ -1,2 +1,4 @@
 django
 six
+crispy_forms
+django-filters

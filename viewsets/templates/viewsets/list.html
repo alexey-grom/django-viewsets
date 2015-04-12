@@ -1,0 +1,44 @@
+{% extends 'viewsets/base.html' %}
+
+{% load i18n %}
+{% load viewsets_tags %}
+
+{% block title %}{{ model_meta.verbose_name_plural|capfirst }} {% trans 'list' %}{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="active">{{ model_meta.verbose_name_plural|capfirst }}</li>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-12">
+            <h3>
+                <span>{{ model_meta.verbose_name_plural|capfirst }} {% trans 'list' %}</span>
+                {% if viewset|viewset_has:'add' %}
+                    <a class="btn btn-default btn-sm pull-right" href="{% viewset_reverse 'add' %}"><i class="glyphicon glyphicon-plus"></i> {% trans 'Add' %}</a>
+                {% endif %}
+            </h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <ul class="list-group">
+                {% for object in object_list %}
+                    <li class="list-group-item">
+                        <div class="btn-group pull-right" role="group">
+                            {% if viewset|viewset_has:'edit' %}
+                                <a class="btn btn-default btn-xs" href="{% viewset_reverse 'edit' pk=object.pk %}"><i class="glyphicon glyphicon-pencil"></i> {% trans 'Edit' %}</a>
+                            {% endif %}
+                            {% if viewset|viewset_has:'delete' %}
+                                <a class="btn btn-default btn-xs" href="{% viewset_reverse 'delete' pk=object.pk %}"><i class="glyphicon glyphicon-trash"></i> {% trans 'Delete' %}</a>
+                            {% endif %}
+                        </div>
+                        {% if viewset|viewset_has:'detail' %}
+                            <a href="{% viewset_reverse 'detail' pk=object.pk %}">{{ object }}</a>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endblock %}

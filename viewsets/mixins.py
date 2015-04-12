@@ -1,76 +1,96 @@
 # encoding: utf-8
 
-from django.conf.urls import url
-from django.views import generic as generic_views
+from django.conf.urls import url, patterns, include
 
-from . import viewsets
-from . import helpers
+from viewsets import viewset
+from viewsets import views
+from viewsets import helpers
 
 
-class ModelNamespaceMixin(viewsets.BaseViewSet):
+class NamespaceMixin(viewset.BaseViewSet):
+    namespace = None
+
+    def get_namespace(self):
+        return self.namespace
+
+    def get_urls(self):
+        urls = self.collect_urls()
+        nested = patterns('', *urls)
+        return include(nested, namespace=self.get_namespace())
+
+    def reverse(self, name, *args, **kwargs):
+        name = '{}:{}'.format(self.get_namespace(), name)
+        return super(NamespaceMixin, self).reverse(name, *args, **kwargs)
+
+
+class ModelNamespaceMixin(NamespaceMixin):
     model = None
 
     def get_namespace(self):
-        namespace = super(ModelNamespaceMixin, self).get_namespace()
-        if namespace is None and self.model:
-            namespace = helpers.camelcase_to_dash(self.model.__name__)
-        return namespace
+        if not hasattr(self, '_namespace'):
+            namespace = super(ModelNamespaceMixin, self).get_namespace()
+            if namespace is None and self.model:
+                namespace = helpers.camelcase_to_dash(self.model.__name__)
+            self._namespace = namespace
+        return self._namespace
 
 
-class ListMixin(viewsets.BaseViewSet):
+class ListMixin(viewset.BaseViewSet):
     model = None
     queryset = None
-    list_template_name = None
     paginate_by = None
 
     def collect_urls(self, *other):
         kwargs, view_class = self.build_list_view()
-        item = url('^$',
-                   view_class.as_view(**kwargs),
-                   name='list')
+        item = url('^$', view_class.as_view(**kwargs), name='list')
         return super(ListMixin, self).collect_urls(item, *other)
 
     def build_list_view(self):
-        kwargs, view_class = self.wrap_view(generic_views.ListView)
-        kwargs.update({
-            'template_name': self.list_template_name,
+        kwargs, view_class = self.wrap_view(self.get_list_class())
+        kwargs.update(self.get_list_kwargs())
+        return kwargs, view_class
+
+    def get_list_class(self):
+        return views.ListView
+
+    def get_list_kwargs(self):
+        return {
             'model': self.model,
             'queryset': self.queryset,
             'paginate_by': self.paginate_by,
-        })
-        return kwargs, view_class
+        }
 
 
-class DetailMixin(viewsets.BaseViewSet):
+class DetailMixin(viewset.BaseViewSet):
     model = None
     queryset = None
-    detail_template_name = None
 
     def collect_urls(self, *other):
         kwargs, view_class = self.build_detail_view()
-        item = url('^(?P<pk>\d+)/$',
-                   view_class.as_view(**kwargs),
-                   name='detail')
+        item = url('^(?P<pk>\d+)/$', view_class.as_view(**kwargs), name='detail')
         return super(DetailMixin, self).collect_urls(item, *other)
 
     def build_detail_view(self):
-        kwargs, view_class = self.wrap_view(generic_views.DetailView)
-        kwargs.update({
-            'template_name': self.detail_template_name,
-            'model': self.model,
-            'queryset': self.queryset,
-        })
+        kwargs, view_class = self.wrap_view(self.get_detail_class())
+        kwargs.update(self.get_detail_kwargs())
         return kwargs, view_class
 
+    def get_detail_class(self):
+        return views.DetailView
 
-class CreateMixin(viewsets.BaseViewSet):
+    def get_detail_kwargs(self):
+        return {
+            'model': self.model,
+            'queryset': self.queryset,
+        }
+
+
+class CreateMixin(viewset.BaseViewSet):
     model = None
     queryset = None
-    create_template_name = None
     initial = {}
     form_class = None
     fields = None
-    create_success_url = None
     prefix = None
 
     def collect_urls(self, *other):
@@ -81,27 +101,29 @@ class CreateMixin(viewsets.BaseViewSet):
         return super(CreateMixin, self).collect_urls(item, *other)
 
     def build_create_view(self):
-        kwargs, view_class = self.wrap_view(generic_views.CreateView)
-        kwargs.update({
-            'template_name': self.create_template_name,
+        kwargs, view_class = self.wrap_view(self.get_create_class())
+        kwargs.update(self.get_create_kwargs())
+        return kwargs, view_class
+
+    def get_create_class(self):
+        return views.CreateView
+
+    def get_create_kwargs(self):
+        return {
             'model': self.model,
             'queryset': self.queryset,
             'form_class': self.form_class,
             'fields': self.fields,
-            'success_url': self.create_success_url,
             'prefix': self.prefix,
-        })
-        return kwargs, view_class
+        }
 
 
-class UpdateMixin(viewsets.BaseViewSet):
+class UpdateMixin(viewset.BaseViewSet):
     model = None
     queryset = None
-    update_template_name = None
     initial = {}
     form_class = None
     fields = None
-    update_success_url = None
     prefix = None
 
     def collect_urls(self, *other):
@@ -112,24 +134,26 @@ class UpdateMixin(viewsets.BaseViewSet):
         return super(UpdateMixin, self).collect_urls(item, *other)
 
     def build_update_view(self):
-        kwargs, view_class = self.wrap_view(generic_views.UpdateView)
-        kwargs.update({
-            'template_name': self.update_template_name,
+        kwargs, view_class = self.wrap_view(self.get_update_class())
+        kwargs.update(self.get_update_kwargs())
+        return kwargs, view_class
+
+    def get_update_class(self):
+        return views.UpdateView
+
+    def get_update_kwargs(self):
+        return {
             'model': self.model,
             'queryset': self.queryset,
             'form_class': self.form_class,
             'fields': self.fields,
-            'success_url': self.update_success_url,
             'prefix': self.prefix,
-        })
-        return kwargs, view_class
+        }
 
 
-class DeleteMixin(viewsets.BaseViewSet):
+class DeleteMixin(viewset.BaseViewSet):
     model = None
     queryset = None
-    delete_template_name = None
-    delete_success_url = None
 
     def collect_urls(self, *other):
         kwargs, view_class = self.build_delete_view()
@@ -139,11 +163,15 @@ class DeleteMixin(viewsets.BaseViewSet):
         return super(DeleteMixin, self).collect_urls(item, *other)
 
     def build_delete_view(self):
-        kwargs, view_class = self.wrap_view(generic_views.DeleteView)
-        kwargs.update({
-            'template_name': self.delete_template_name,
+        kwargs, view_class = self.wrap_view(self.get_delete_class())
+        kwargs.update(self.get_delete_kwargs())
+        return kwargs, view_class
+
+    def get_delete_class(self):
+        return views.DeleteView
+
+    def get_delete_kwargs(self):
+        return {
             'model': self.model,
             'queryset': self.queryset,
-            'success_url': self.delete_success_url,
-        })
-        return kwargs, view_class
+        }

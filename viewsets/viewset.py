@@ -1,17 +1,14 @@
 # encoding: utf-8
 
 from django.conf.urls import patterns, include
+from django.core.urlresolvers import reverse_lazy
 
-from . import views
-from . import helpers
+from viewsets import views
+from viewsets import helpers
 
 
 class BaseViewSet(object):
-    namespace = None
     mixin_classes = (views.GenericViewMixin, )
-
-    def get_namespace(self):
-        return self.namespace
 
     def get_mixin_classes(self):
         return self.mixin_classes
@@ -28,8 +25,13 @@ class BaseViewSet(object):
     def get_urls(self):
         urls = self.collect_urls()
         nested = patterns('', *urls)
-        return include(nested, namespace=self.get_namespace())
+        return include(nested)
+
+    def reverse(self, name, *args, **kwargs):
+        return reverse_lazy(name, args=args, kwargs=kwargs)
 
     @property
     def urls(self):
-        return self.get_urls()
+        if not hasattr(self, '_urls'):
+            self._urls = self.get_urls()
+        return self._urls

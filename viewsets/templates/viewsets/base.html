@@ -1,0 +1,39 @@
+{% spaceless %}
+    <!DOCTYPE html>
+    <html>
+    <head lang="en">
+        <meta charset="UTF-8">
+        <title>{% block title %}{% endblock %}</title>
+        {% block head %}
+            <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"/>
+            <style>
+                body {
+                    margin-top: 20px;
+                }
+                .object-content td:first-of-type {
+                    padding-right: 20px;
+                    font-weight: 700;
+                    text-align: right;
+                }
+            </style>
+        {% endblock %}
+    </head>
+    <body>
+        <div class="container">
+            <ol class="breadcrumb">
+                {% block breadcrumbs %}{% endblock %}
+            </ol>
+        </div>
+
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+
+        {% block scripts %}
+            <script src="//code.jquery.com/jquery-2.1.3.min.js"></script>
+            <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+        {% endblock %}
+
+    </body>
+    </html>
+{% endspaceless %}

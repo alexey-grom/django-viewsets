@@ -1,0 +1,8 @@
+<table class="object-content">
+    {% for key, value in fields.iteritems %}
+        <tr>
+            <td>{{ key|capfirst }}</td>
+            <td>{{ value }}</td>
+        </tr>
+    {% endfor %}
+</table>
