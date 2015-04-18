@@ -8,7 +8,7 @@ from viewsets import helpers
 
 
 class BaseViewSet(object):
-    def get_mixin_classes(self):
+    def get_mixin_classes(self, view_class):
         return (views.GenericViewMixin, )
 
     def collect_urls(self, *other):
@@ -16,8 +16,7 @@ class BaseViewSet(object):
 
     def wrap_view(self, view_class):
         kwargs = {'viewset': self}  # weakref.ref?
-        view_class = helpers.make_mixin(view_class,
-                                        *self.get_mixin_classes())
+        view_class = helpers.make_mixin(view_class, *self.get_mixin_classes(view_class))
         return kwargs, view_class
 
     def get_urls(self):

@@ -6,19 +6,22 @@
 {% block title %}{{ object }}{% endblock %}
 
 {% block breadcrumbs %}
-    {% if viewset|viewset_has:'list' %}
+    {% viewset_has_permission 'list' as is_can_list %}
+    {% if is_can_list %}
         <li><a href="{% viewset_reverse 'list' %}">{{ viewset.model_options.verbose_name_plural|capfirst }}</a></li>
     {% endif %}
     <li class="active">{{ object }}</li>
 {% endblock %}
 
 {% block content %}
+    {% viewset_has_permission 'edit' object as is_can_edit %}
+    {% viewset_has_permission 'delete' object as is_can_delete %}
     <h2>
         <span class="btn-group pull-right" role="group">
-            {% if viewset|viewset_has:'edit' %}
+            {% if is_can_edit %}
                 <a class="btn btn-default btn-sm" href="{% viewset_reverse 'edit' pk=object.pk %}"><i class="fa fa-pencil"></i>&nbsp;{% trans 'Edit' %}</a>
             {% endif %}
-            {% if viewset|viewset_has:'delete' %}
+            {% if is_can_delete %}
                 <a class="btn btn-default btn-sm" href="{% viewset_reverse 'delete' pk=object.pk %}"><i class="fa fa-trash"></i>&nbsp;{% trans 'Delete' %}</a>
             {% endif %}
         </span>

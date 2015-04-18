@@ -6,10 +6,12 @@
 {% block title %}{% trans 'Edit' %} &laquo;{{ object }}&raquo;{% endblock %}
 
 {% block breadcrumbs %}
-    {% if viewset|viewset_has:'list' %}
+    {% viewset_has_permission 'detail' as is_can_detail %}
+    {% viewset_has_permission 'list' as is_can_list %}
+    {% if is_can_list %}
         <li><a href="{% viewset_reverse 'list' %}">{{ viewset.model_options.verbose_name_plural|capfirst }}</a></li>
     {% endif %}
-    {% if viewset|viewset_has:'detail' %}
+    {% if is_can_detail %}
         <li><a href="{% viewset_reverse 'detail' pk=object.pk %}">{{ object }}</a></li>
     {% endif %}
     <li class="active">{% trans 'Edit' %}</li>

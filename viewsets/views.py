@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 from django.views.generic import base as base_views
+from django.views.generic.detail import SingleObjectMixin
 from django.views import generic as generic_views
 from django.utils.translation import ugettext_lazy as _
 
@@ -15,13 +16,24 @@ class GenericViewMixin(base_views.ContextMixin, generic_views.View):
         kwargs['viewset'] = self.viewset
         return super(GenericViewMixin, self).get_context_data(**kwargs)
 
+    @property
+    def view_name(self):
+        return self.request.resolver_match.url_name
 
-class GuardViewMixin(GenericViewMixin):
+
+class DispatchViewMixin(GenericViewMixin):
     def dispatch(self, request, *args, **kwargs):
         response = self.viewset.pre_dispatch_request(self, request)
         if response:
             return response
-        return super(GuardViewMixin, self).dispatch(request, *args, **kwargs)
+        return super(DispatchViewMixin, self).dispatch(request, *args, **kwargs)
+
+
+class CheckObjectViewMixin(SingleObjectMixin, GenericViewMixin):
+    def get_object(self, queryset=None):
+        obj = super(CheckObjectViewMixin, self).get_object(queryset)
+        self.viewset.check_object(self, self.request, obj)
+        return obj
 
 
 class ListView(generic_views.ListView, base_views.TemplateResponseMixin,

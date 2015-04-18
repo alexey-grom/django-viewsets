@@ -1,6 +1,8 @@
 # encoding: utf-8
 
+from django.contrib.auth import get_permission_codename
 from django.conf.urls import url, patterns, include
+from django.core.exceptions import PermissionDenied
 
 from viewsets import viewset
 from viewsets import views
@@ -37,11 +39,55 @@ class ModelNamespaceMixin(NamespaceMixin):
 
 class GuardMixin(viewset.BaseViewSet):
     def pre_dispatch_request(self, view, request):
-        """"""
+        """
+        table level permissions
+        """
 
-    def get_mixin_classes(self):
-        return (views.GuardViewMixin, ) + \
-               super(GuardMixin, self).get_mixin_classes()
+    def check_object(self, view, request, obj):
+        """
+        row level permissions
+        """
+
+    def get_mixin_classes(self, view_class):
+        mixin_classes = (views.DispatchViewMixin, ) + super(GuardMixin, self).get_mixin_classes(view_class)
+        if issubclass(view_class, views.SingleObjectMixin):
+            mixin_classes = mixin_classes + (views.CheckObjectViewMixin, )
+        return mixin_classes
+
+
+class PermissionsMixin(GuardMixin):
+    model = None
+
+    def pre_dispatch_request(self, view, request):
+        super(PermissionsMixin, self).pre_dispatch_request(view, request)
+        if not self.is_has_permission(request, view.view_name):
+            self.raise_forbidden(request, view)
+
+    def check_object(self, view, request, obj):
+        super(PermissionsMixin, self).check_object(view, request, obj)
+        if not self.is_has_permission(request, view.view_name, obj):
+            self.raise_forbidden(request, view, obj)
+
+    def raise_forbidden(self, view, request, obj=None):
+        raise PermissionDenied()
+
+    def is_has_permission(self, request, view_name, obj=None):
+        if view_name == 'list':
+            return True
+        if view_name == 'detail':
+            return True
+        if view_name == 'add':
+            return self.has_auth_permission(request, 'add')
+        if view_name == 'edit':
+            return self.has_auth_permission(request, 'change')
+        if view_name == 'delete':
+            return self.has_auth_permission(request, 'delete')
+        return True
+
+    def has_auth_permission(self, request, name):
+        opts = self.model._meta
+        codename = get_permission_codename(name, opts)
+        return request.user.has_perm('{}.{}'.format(opts.app_label, codename))
 
 
 class ListMixin(viewset.BaseViewSet):
@@ -104,9 +150,7 @@ class CreateMixin(viewset.BaseViewSet):
 
     def collect_urls(self, *other):
         kwargs, view_class = self.build_create_view()
-        item = url('^add/$',
-                   view_class.as_view(**kwargs),
-                   name='add')
+        item = url('^add/$', view_class.as_view(**kwargs), name='add')
         return super(CreateMixin, self).collect_urls(item, *other)
 
     def build_create_view(self):
@@ -137,9 +181,7 @@ class UpdateMixin(viewset.BaseViewSet):
 
     def collect_urls(self, *other):
         kwargs, view_class = self.build_update_view()
-        item = url('^(?P<pk>\d+)/edit/$',
-                   view_class.as_view(**kwargs),
-                   name='edit')
+        item = url('^(?P<pk>\d+)/edit/$', view_class.as_view(**kwargs), name='edit')
         return super(UpdateMixin, self).collect_urls(item, *other)
 
     def build_update_view(self):
@@ -166,9 +208,7 @@ class DeleteMixin(viewset.BaseViewSet):
 
     def collect_urls(self, *other):
         kwargs, view_class = self.build_delete_view()
-        item = url('^(?P<pk>\d+)/delete/$',
-                   view_class.as_view(**kwargs),
-                   name='delete')
+        item = url('^(?P<pk>\d+)/delete/$', view_class.as_view(**kwargs), name='delete')
         return super(DeleteMixin, self).collect_urls(item, *other)
 
     def build_delete_view(self):

@@ -6,23 +6,26 @@
 {% block title %}{% trans 'Delete' %} &laquo;{{ object }}&raquo;{% endblock %}
 
 {% block breadcrumbs %}
-    {% if viewset|viewset_has:'list' %}
+    {% viewset_has_permission 'list' as is_can_list %}
+    {% viewset_has_permission 'detail' object as is_can_detail %}
+    {% if is_can_list %}
         <li><a href="{% viewset_reverse 'list' %}">{{ viewset.model_options.verbose_name_plural|capfirst }}</a></li>
     {% endif %}
-    {% if viewset|viewset_has:'detail' %}
+    {% if is_can_detail %}
         <li><a href="{% viewset_reverse 'detail' pk=object.pk %}">{{ object }}</a></li>
     {% endif %}
     <li class="active">{% trans 'Delete' %}</li>
 {% endblock %}
 
 {% block content %}
+    {% viewset_has_permission 'detail' object as is_can_detail %}
     <h2>{% trans 'Delete' %} &laquo;{{ object }}&raquo;</h2>
     <div class="alert alert-danger clearfix" role="alert">
         <form method="POST">
             {% csrf_token %}
             <div class="btn-group pull-right">
                 <button type="submit" class="btn btn-sm btn-danger">{% trans 'Yes' %}</button>
-                {% if viewset|viewset_has:'detail' %}
+                {% if is_can_detail %}
                     <a href="{% viewset_reverse 'detail' pk=object.pk %}" class="btn btn-sm btn-primary">{% trans 'No' %}</a>
                 {% endif %}
             </div>

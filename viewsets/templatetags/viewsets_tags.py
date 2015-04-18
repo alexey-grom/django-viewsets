@@ -20,6 +20,17 @@ def viewset_has(viewset, view_name):
     return False
 
 
+@register.assignment_tag(takes_context=True)
+def viewset_has_permission(context, view_name, obj=None):
+    request = context.get('request')
+    viewset = context.get('viewset')
+    if not viewset_has(viewset, view_name):
+        return False
+    if not hasattr(viewset, 'is_has_permission'):
+        return True
+    return viewset.is_has_permission(request, view_name, obj)
+
+
 @register.simple_tag(takes_context=True)
 def viewset_reverse(context, *args, **kwargs):
     viewset = context['viewset']

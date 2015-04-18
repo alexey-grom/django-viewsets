@@ -6,7 +6,8 @@
 {% block title %}{% trans 'Add' %} {{ viewset.model_options.verbose_name|lower }}{% endblock %}
 
 {% block breadcrumbs %}
-    {% if viewset|viewset_has:'list' %}
+    {% viewset_has_permission 'list' as is_can_list %}
+    {% if is_can_list %}
         <li><a href="{% viewset_reverse 'list' %}">{{ viewset.model_options.verbose_name_plural|capfirst }}</a></li>
     {% endif %}
     <li class="active">{% trans 'Add' %}</li>
