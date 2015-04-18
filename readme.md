@@ -53,7 +53,7 @@ Generic viewsets
 Generic mixins
 --------------
 
-* *Generic*
+* *CBV*
 
     * `ListMixin`
     * `DetailMixin` 
