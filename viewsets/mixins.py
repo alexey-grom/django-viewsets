@@ -25,9 +25,15 @@ class NamespaceMixin(viewset.BaseViewSet):
         return super(NamespaceMixin, self).reverse(name, *args, **kwargs)
 
 
-class ModelNamespaceMixin(NamespaceMixin):
+class ModelMixin(viewset.BaseViewSet):
     model = None
 
+    @property
+    def model_options(self):
+        return self.model._meta
+
+
+class ModelNamespaceMixin(NamespaceMixin, ModelMixin):
     def get_namespace(self):
         if not hasattr(self, '_namespace'):
             namespace = super(ModelNamespaceMixin, self).get_namespace()
@@ -55,7 +61,7 @@ class GuardMixin(viewset.BaseViewSet):
         return mixin_classes
 
 
-class PermissionsMixin(GuardMixin):
+class PermissionsMixin(GuardMixin, ModelMixin):
     model = None
 
     def pre_dispatch_request(self, view, request):
@@ -85,13 +91,12 @@ class PermissionsMixin(GuardMixin):
         return True
 
     def has_auth_permission(self, request, name):
-        opts = self.model._meta
-        codename = get_permission_codename(name, opts)
-        return request.user.has_perm('{}.{}'.format(opts.app_label, codename))
+        codename = get_permission_codename(name, self.model_options)
+        perm = '{}.{}'.format(self.model_options.app_label, codename)
+        return request.user.has_perm(perm)
 
 
-class ListMixin(viewset.BaseViewSet):
-    model = None
+class ListMixin(ModelMixin, viewset.BaseViewSet):
     queryset = None
     paginate_by = 100
 
@@ -116,8 +121,7 @@ class ListMixin(viewset.BaseViewSet):
         }
 
 
-class DetailMixin(viewset.BaseViewSet):
-    model = None
+class DetailMixin(ModelMixin, viewset.BaseViewSet):
     queryset = None
 
     def collect_urls(self, *other):
@@ -140,8 +144,7 @@ class DetailMixin(viewset.BaseViewSet):
         }
 
 
-class CreateMixin(viewset.BaseViewSet):
-    model = None
+class CreateMixin(ModelMixin, viewset.BaseViewSet):
     queryset = None
     initial = {}
     form_class = None
@@ -171,8 +174,7 @@ class CreateMixin(viewset.BaseViewSet):
         }
 
 
-class UpdateMixin(viewset.BaseViewSet):
-    model = None
+class UpdateMixin(ModelMixin, viewset.BaseViewSet):
     queryset = None
     initial = {}
     form_class = None
@@ -202,8 +204,7 @@ class UpdateMixin(viewset.BaseViewSet):
         }
 
 
-class DeleteMixin(viewset.BaseViewSet):
-    model = None
+class DeleteMixin(ModelMixin, viewset.BaseViewSet):
     queryset = None
 
     def collect_urls(self, *other):

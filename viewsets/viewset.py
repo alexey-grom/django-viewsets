@@ -8,6 +8,11 @@ from viewsets import helpers
 
 
 class BaseViewSet(object):
+    def __init__(self, **kwargs):
+        super(BaseViewSet, self).__init__()
+        for key, value in kwargs.iteritems():
+            setattr(self, key, value)
+
     def get_mixin_classes(self, view_class):
         return (views.GenericViewMixin, )
 
