@@ -11,6 +11,7 @@ class BaseViewSet(object):
     def __init__(self, **kwargs):
         super(BaseViewSet, self).__init__()
         for key, value in kwargs.iteritems():
+            assert hasattr(self, key), 'Pass unknown parameter'
             setattr(self, key, value)
 
     def get_mixin_classes(self, view_class):
@@ -20,7 +21,7 @@ class BaseViewSet(object):
         return other
 
     def wrap_view(self, view_class):
-        kwargs = {'viewset': self}  # weakref.ref?
+        kwargs = {'viewset': self}
         view_class = helpers.make_mixin(view_class, *self.get_mixin_classes(view_class))
         return kwargs, view_class
 

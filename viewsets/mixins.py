@@ -1,8 +1,11 @@
 # encoding: utf-8
 
-from django.contrib.auth import get_permission_codename
+from collections import OrderedDict
+
 from django.conf.urls import url, patterns, include
 from django.core.exceptions import PermissionDenied
+from django.db.models.fields import Field
+from django.db.models.fields.related import RelatedField, ForeignKey, ManyToManyField
 
 from viewsets import viewset
 from viewsets import views
@@ -32,6 +35,17 @@ class ModelMixin(viewset.BaseViewSet):
     def model_options(self):
         return self.model._meta
 
+    @property
+    def read_write_fields(self):
+        return self.get_read_write_fields()
+
+    def get_read_write_fields(self):
+        return [
+            field.name
+            for field in self.model_options.get_fields(include_parents=False)
+            if isinstance(field, Field)
+        ]
+
 
 class ModelNamespaceMixin(NamespaceMixin, ModelMixin):
     def get_namespace(self):
@@ -43,15 +57,46 @@ class ModelNamespaceMixin(NamespaceMixin, ModelMixin):
         return self._namespace
 
 
+class ModelSerializeMixin(ModelMixin, viewset.BaseViewSet):
+    def serialize_object(self, obj):
+        fields = []
+
+        for field in self.model_options.get_fields(include_parents=False):
+            result = self.serialize_field(field, obj)
+            if not result:
+                continue
+            fields.append(result)
+
+        return OrderedDict(fields)
+
+    def serialize_field(self, field, obj):
+        if not isinstance(field, Field):
+            return
+
+        title = field.verbose_name
+        value = getattr(obj, field.name)
+
+        if isinstance(field, ForeignKey):
+            value = unicode(value)
+
+        elif isinstance(field, ManyToManyField):
+            value = unicode(value.all()[:3])
+
+        else:
+            pass
+
+        return title, value
+
+
 class GuardMixin(viewset.BaseViewSet):
     def pre_dispatch_request(self, view, request):
         """
-        table level permissions
+        View level access checking
         """
 
     def check_object(self, view, request, obj):
         """
-        row level permissions
+        Object level access checking
         """
 
     def get_mixin_classes(self, view_class):
@@ -63,40 +108,47 @@ class GuardMixin(viewset.BaseViewSet):
 
 class PermissionsMixin(GuardMixin, ModelMixin):
     model = None
+    permission_check_classes = ()
+
+    # GuardMixin behaviour methods
 
     def pre_dispatch_request(self, view, request):
         super(PermissionsMixin, self).pre_dispatch_request(view, request)
-        if not self.is_has_permission(request, view.view_name):
+        if not self.has_view_access(view.view_name, request):
             self.raise_forbidden(request, view)
 
     def check_object(self, view, request, obj):
         super(PermissionsMixin, self).check_object(view, request, obj)
-        if not self.is_has_permission(request, view.view_name, obj):
+        if not self.has_object_access(view.view_name, request, obj):
             self.raise_forbidden(request, view, obj)
+
+    # permission denied behaviour
 
     def raise_forbidden(self, view, request, obj=None):
         raise PermissionDenied()
 
-    def is_has_permission(self, request, view_name, obj=None):
-        if view_name == 'list':
-            return True
-        if view_name == 'detail':
-            return True
-        if view_name == 'add':
-            return self.has_auth_permission(request, 'add')
-        if view_name == 'edit':
-            return self.has_auth_permission(request, 'change')
-        if view_name == 'delete':
-            return self.has_auth_permission(request, 'delete')
+    # permission checkers call
+
+    def has_view_access(self, viewname, request):
+        for checker_class in self.permission_check_classes:
+            if not checker_class(self, viewname, request).has_view_access():
+                return False
         return True
 
-    def has_auth_permission(self, request, name):
-        codename = get_permission_codename(name, self.model_options)
-        perm = '{}.{}'.format(self.model_options.app_label, codename)
-        return request.user.has_perm(perm)
+    def has_object_access(self, viewname, request, obj):
+        for checker_class in self.permission_check_classes:
+            if not checker_class(self, viewname, request).has_object_access(obj):
+                return False
+        return True
+
+    def has_access(self, viewname, request, obj=None):
+        """Proxy-method for `has_view_access` and `has_object_access` depends on `obj`"""
+        if obj:
+            return self.has_object_access(viewname, request, obj)
+        return self.has_view_access(viewname, request)
 
 
-class ListMixin(ModelMixin, viewset.BaseViewSet):
+class ListMixin(ModelSerializeMixin):
     queryset = None
     paginate_by = 100
 
@@ -121,7 +173,7 @@ class ListMixin(ModelMixin, viewset.BaseViewSet):
         }
 
 
-class DetailMixin(ModelMixin, viewset.BaseViewSet):
+class DetailMixin(ModelSerializeMixin):
     queryset = None
 
     def collect_urls(self, *other):
@@ -169,7 +221,7 @@ class CreateMixin(ModelMixin, viewset.BaseViewSet):
             'model': self.model,
             'queryset': self.queryset,
             'form_class': self.form_class,
-            'fields': self.fields,
+            'fields': self.fields or self.read_write_fields,
             'prefix': self.prefix,
         }
 
@@ -199,12 +251,12 @@ class UpdateMixin(ModelMixin, viewset.BaseViewSet):
             'model': self.model,
             'queryset': self.queryset,
             'form_class': self.form_class,
-            'fields': self.fields,
+            'fields': self.fields or self.read_write_fields,
             'prefix': self.prefix,
         }
 
 
-class DeleteMixin(ModelMixin, viewset.BaseViewSet):
+class DeleteMixin(ModelSerializeMixin):
     queryset = None
 
     def collect_urls(self, *other):

@@ -6,7 +6,7 @@ from viewsets import __version__
 
 
 setup(
-    name='django-viewsets',
+    name='djangoviewsets',
     version=__version__,
     description='',
     url='https://github.com/alexey-grom/django-viewsets',

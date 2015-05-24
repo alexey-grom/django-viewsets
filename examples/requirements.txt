@@ -2,3 +2,5 @@ django
 six
 django-crispy-forms
 django-filters
+django-debug-toolbar
+django-extensions

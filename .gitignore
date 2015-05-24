@@ -55,6 +55,4 @@ docs/_build/
 venv/
 .idea/
 .svn/
-data/
-src/media/
-src/static/
+*.sqlite*

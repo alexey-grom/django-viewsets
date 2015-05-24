@@ -4,7 +4,8 @@ from viewsets import viewset
 from viewsets import mixins
 
 
-class BaseModelViewSet(mixins.GuardMixin, mixins.ModelNamespaceMixin,
+class BaseModelViewSet(mixins.PermissionsMixin,
+                       mixins.ModelNamespaceMixin,
                        viewset.BaseViewSet):
     """"""
 

@@ -1,11 +1,9 @@
 # encoding: utf-8
 
-from collections import OrderedDict
-
 from django import template
 from django.core.urlresolvers import RegexURLPattern
 
-from viewsets import compat
+from viewsets import compat, mixins
 
 
 register = template.Library()
@@ -24,17 +22,23 @@ def viewset_has(viewset, view_name):
 def viewset_has_permission(context, view_name, obj=None):
     request = context.get('request')
     viewset = context.get('viewset')
+
+    assert view_name
+    assert viewset
+    assert request
+    assert isinstance(viewset, mixins.PermissionsMixin)
+
     if not viewset_has(viewset, view_name):
         return False
-    if not hasattr(viewset, 'is_has_permission'):
-        return True
-    return viewset.is_has_permission(request, view_name, obj)
+    return viewset.has_access(view_name, request, obj)
 
 
 @register.simple_tag(takes_context=True)
 def viewset_reverse(context, *args, **kwargs):
     viewset = context['viewset']
+
     assert viewset is not None
+
     return viewset.reverse(*args, **kwargs)
 
 
@@ -46,11 +50,14 @@ def viewset_render_form(form, *args, **kwargs):
         return form.as_table()
 
 
-@register.inclusion_tag('viewsets/_object.html')
-def viewset_render_object(object):
-    options = object.__class__._meta
-    data = OrderedDict([
-        (field.verbose_name, getattr(object, field.name))
-        for field in options.get_fields()
-    ])
+@register.inclusion_tag('viewsets/_object.html', takes_context=True)
+def viewset_render_object(context, obj):
+    viewset = context.get('viewset')
+
+    assert obj
+    assert viewset
+    assert isinstance(viewset, mixins.ModelSerializeMixin)
+
+    data = viewset.serialize_object(obj)
+
     return {'fields': data}
